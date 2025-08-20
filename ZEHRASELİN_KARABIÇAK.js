@@ -19,6 +19,8 @@
         "https://www.e-bebek.com/assets/svg/default-hover-favorite.svg",
       arrowPrev: "https://cdn06.e-bebek.com/assets/svg/prev.svg",
       arrowNext: "https://cdn06.e-bebek.com/assets/svg/next.svg",
+      play: "https://www.e-bebek.com/assets/svg/play-badge.svg",
+      ar: "https://www.e-bebek.com/assets/svg/ar-icon-white.svg",
     },
     tokens: {
       titleBg: "#FEF6EB",
@@ -118,6 +120,8 @@
           position: absolute; top: 10px; right: 10px;
           width: 42px; height: 42px; display: grid; place-items: center;
           background: #fff; border-radius: 50%;
+          box-shadow: 0 2px 6px rgba(0,0,0,.06);
+          cursor: pointer;
         }
         .insr-heart img { width: 24px; height: 24px; }
   
@@ -228,7 +232,7 @@
   }
 
   function buildProductCard(product) {
-    const { brand, name, img, url, price, original_price } = product;
+    const { id, brand, name, img, url, price, original_price } = product;
     const hasDiscount =
       typeof original_price === "number" && original_price > price;
     const pct = hasDiscount ? computeDiscountPercent(price, original_price) : 0;
@@ -242,7 +246,7 @@
       : "insr-price--new";
 
     return `
-      <article class="insr-card">
+      <article class="insr-card" data-id="${id}">
         <a href="${url}" target="_blank" rel="noopener" style="text-decoration:none;color:inherit">
           <figure class="insr-card__imgwrap"><img src="${img}" alt="${
       (brand || "") + " " + (name || "")
@@ -267,6 +271,22 @@
     if (!row) return;
     row.innerHTML = products.map(buildProductCard).join("");
 
+    // Favori görünümü ve toggle
+    const favIds = loadFavorites();
+    document.querySelectorAll(".insr-card").forEach((card) => {
+      const pid = card.getAttribute("data-id");
+      const heartImg = card.querySelector(".insr-heart img");
+      if (favIds.includes(String(pid)))
+        heartImg.src = config.assets.heartActive;
+      card.querySelector(".insr-heart").addEventListener("click", (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        toggleFavorite(String(pid));
+        const nowFav = loadFavorites().includes(String(pid));
+        heartImg.src = nowFav ? config.assets.heartActive : config.assets.heart;
+      });
+    });
+
     const scroller = document.getElementById("insr-scroll");
     const step = config.tokens.cardWidth + config.tokens.gap;
     const prev = document.querySelector(".insr-nav--prev");
@@ -279,6 +299,31 @@
         scroller.scrollBy({ left: step, behavior: "smooth" })
       );
     }
+  }
+
+  // Favoriler yardımcıları
+  function loadFavorites() {
+    try {
+      const raw = localStorage.getItem(config.localStorage.favoritesKey);
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr.map(String) : [];
+    } catch (_) {
+      return [];
+    }
+  }
+  function saveFavorites(arr) {
+    try {
+      localStorage.setItem(
+        config.localStorage.favoritesKey,
+        JSON.stringify(arr)
+      );
+    } catch (_) {}
+  }
+  function toggleFavorite(id) {
+    const set = new Set(loadFavorites());
+    if (set.has(id)) set.delete(id);
+    else set.add(id);
+    saveFavorites(Array.from(set));
   }
 
   function init() {
