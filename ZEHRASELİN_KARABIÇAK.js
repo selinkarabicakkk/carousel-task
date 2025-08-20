@@ -39,25 +39,27 @@
   };
 
   function isHomepage() {
-    // Yol kontrolü: Ana sayfa için "/", "/tr", "/tr_TR", "/tr-TR" gibi varyasyonlar
     const path = location.pathname.replace(/\/+$/, "");
     if (path === "" || path === "/" || /^\/(tr|tr_TR|tr-TR)?$/.test(path)) {
-      // Ana sayfa URL'i doğru, şimdi DOM elementlerini kontrol et
       const storyElements = document.querySelector(
         '.stories, [class*="stories"], .home-stories, .banner'
       );
       const homeElements = document.querySelector(
         ".homepage, .home, .eb-home, .swiper, .owl-carousel"
       );
-
-      // Ana sayfa URL'i doğru VE gerekli DOM elementleri varsa true döndür
       return !!storyElements && !!homeElements;
     }
-
-    return false; // URL ana sayfa değilse kesinlikle false döndür
+    return false;
   }
 
   function findInsertPoint() {
+    const section1 = document.querySelector(
+      'cx-page-slot[position="Section1"]'
+    );
+    if (section1) {
+      return section1;
+    }
+
     for (const sel of config.selectors.afterStoriesAnchors) {
       const el = document.querySelector(sel);
       if (el && el.parentElement) return el.parentElement;
@@ -80,19 +82,24 @@
     const css = `
         .insr-carousel { margin-top: 24px; }
         .insr-carousel__titlebar {
-          background: ${config.tokens.titleBg};
+          background: #fef6eb;
           padding: 25px 67px;
-          border-radius: 16px;
+          border-top-left-radius: 35px;
+          border-top-right-radius: 35px;
+          margin-bottom: 24px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
         }
         .insr-carousel__title {
-          font-family: Quicksand, 'Quicksand-Bold', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+          font-family: Quicksand-Bold;
           font-weight: 700;
-          color: ${config.tokens.titleColor};
+          color: #F28E00;
           font-size: 28.8px;
           line-height: 1.2;
           margin: 0;
         }
-        .insr-carousel__track { position: relative; padding: 24px 0; }
+        .insr-carousel__track { position: relative; padding: 0px 0; }
         .insr-carousel__scroller { overflow-x: auto; overflow-y: hidden; scroll-behavior: smooth; }
         .insr-carousel__scroller::-webkit-scrollbar { display: none; }
         .insr-carousel__row {
@@ -101,10 +108,10 @@
           will-change: transform;
         }
         .insr-carousel { --insr-card-w: ${config.tokens.cardWidth}px; }
-        @media (min-width: 1440px) { .insr-carousel { --insr-card-w: 246px; } }
-        @media (max-width: 1439px) and (min-width: 1200px) { .insr-carousel { --insr-card-w: 334px; } }
-        @media (max-width: 1199px) and (min-width: 992px)  { .insr-carousel { --insr-card-w: 334px; } }
-        @media (max-width: 991px) and (min-width: 768px)   { .insr-carousel { --insr-card-w: 360px; } }
+        @media (min-width: 1440px) { .insr-carousel { --insr-card-w: 230px; } }
+        @media (max-width: 1439px) and (min-width: 1200px) { .insr-carousel { --insr-card-w: 230px; } }
+        @media (max-width: 1199px) and (min-width: 992px)  { .insr-carousel { --insr-card-w: 230px; } }
+        @media (max-width: 991px) and (min-width: 768px)   { .insr-carousel { --insr-card-w: 230px; } }
         @media (max-width: 575px) { .insr-carousel { --insr-card-w: 88vw; } }
 
         .insr-card {
@@ -112,29 +119,29 @@
           background: #fff;
           border: 1px solid ${config.tokens.cardBorder};
           border-radius: 10px;
-          padding: 18px;
-          margin: 20px 0 20px 3px;
+          padding: 12px;
+          margin: 10px 0 10px 0;
           color: ${config.tokens.textColor};
           flex: 0 0 auto;
           transition: box-shadow .15s ease, border-color .15s ease;
-          min-height: 560px;
+          min-height: 460px;
           position: relative;
         }
         .insr-card:hover { 
           border: 3.5px solid ${config.tokens.titleColor}; 
           box-shadow: 0 4px 16px rgba(0,0,0,.08);
-          padding: 15.5px;
+          padding: 11px;
         }
         
 
-        .insr-stars { display: flex; align-items: center; margin: 10px 0; }
+        .insr-stars { display: flex; align-items: center; margin: 8px 0; }
         .insr-stars__icons { 
           position: relative; 
           display: flex;
           align-items: center;
         }
         .insr-stars__icons .star {
-          font-size: 18px;
+          font-size: 16px;
           color: #ddd;
           position: relative;
           margin-right: 3px;
@@ -275,20 +282,7 @@
     root.className = "insr-carousel";
     root.setAttribute("aria-label", "Beğenebileceğinizi Düşündüklerimiz");
 
-    root.innerHTML = `
-        <div class="insr-carousel__titlebar">
-          <h2 class="insr-carousel__title">${config.copy.title}</h2>
-        </div>
-        <div class="insr-carousel__track">
-          <button class="insr-nav insr-nav--prev" aria-label="Geri"></button>
-          <div class="insr-carousel__scroller" id="insr-scroll">
-            <div class="insr-carousel__row" id="insr-row">
-
-            </div>
-          </div>
-          <button class="insr-nav insr-nav--next" aria-label="İleri"></button>
-        </div>
-      `;
+    root.innerHTML = `<div class="insr-carousel__titlebar"><h2 class="insr-carousel__title">${config.copy.title}</h2></div><div class="insr-carousel__track"><button class="insr-nav insr-nav--prev" aria-label="Geri"></button><div class="insr-carousel__scroller" id="insr-scroll"><div class="insr-carousel__row" id="insr-row"></div></div><button class="insr-nav insr-nav--next" aria-label="İleri"></button></div>`;
     return root;
   }
 
@@ -363,43 +357,30 @@
       ? "insr-price--new discount"
       : "insr-price--new";
 
-    return `
-      <article class="insr-card" data-id="${id}">
-        <a href="${url}" target="_blank" rel="noopener" style="text-decoration:none;color:inherit">
-          <figure class="insr-card__imgwrap"><img src="${img}" alt="${
+    return `<article class="insr-card" data-id="${id}"><a href="${url}" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><figure class="insr-card__imgwrap"><img src="${img}" alt="${
       (brand || "") + " " + (name || "")
-    }" style="max-width:100%; max-height:100%; object-fit:contain"/></figure>
-          <h2 class="insr-card__brand"><b>${
-            brand || ""
-          } - </b><span class="insr-card__name">${name || ""}</span></h2>
-          <div class="insr-card__price">${oldPriceHtml}<span class="${newPriceCls}">${formatPriceTry(
+    }" style="max-width:100%; max-height:100%; object-fit:contain"/></figure><h2 class="insr-card__brand"><b>${
+      brand || ""
+    } - </b><span class="insr-card__name">${
+      name || ""
+    }</span></h2><div class="insr-card__price">${oldPriceHtml}<span class="${newPriceCls}">${formatPriceTry(
       price
-    )}</span></div>
-          <div class="insr-stars">
-            <div class="insr-stars__icons">
-              ${(() => {
-                const fixedRating =
-                  product.rating || Math.ceil(Math.random() * 4.5);
-                return `
-                  <span class="star ${fixedRating >= 1 ? "filled" : ""}"></span>
-                  <span class="star ${fixedRating >= 2 ? "filled" : ""}"></span>
-                  <span class="star ${fixedRating >= 3 ? "filled" : ""}"></span>
-                  <span class="star ${fixedRating >= 4 ? "filled" : ""}"></span>
-                  <span class="star ${fixedRating >= 5 ? "filled" : ""}"></span>
-                `;
-              })()}
-            </div>
-            <div class="insr-stars__count">(${
-              product.rating_count || Math.floor(Math.random() * 200) + 1
-            })</div>
-          </div>
-        </a>
-        <div class="insr-heart"><img src="${
-          config.assets.heart
-        }" alt="favorite"/></div>
-        <div class="insr-card__footer"><button class="insr-btn" type="button">Sepete Ekle</button></div>
-      </article>
-    `;
+    )}</span></div><div class="insr-stars"><div class="insr-stars__icons">${(() => {
+      const fixedRating = product.rating || Math.ceil(Math.random() * 4.5);
+      return `<span class="star ${
+        fixedRating >= 1 ? "filled" : ""
+      }"></span><span class="star ${
+        fixedRating >= 2 ? "filled" : ""
+      }"></span><span class="star ${
+        fixedRating >= 3 ? "filled" : ""
+      }"></span><span class="star ${
+        fixedRating >= 4 ? "filled" : ""
+      }"></span><span class="star ${fixedRating >= 5 ? "filled" : ""}"></span>`;
+    })()}</div><div class="insr-stars__count">(${
+      product.rating_count || Math.floor(Math.random() * 200) + 1
+    })</div></div></a><div class="insr-heart"><img src="${
+      config.assets.heart
+    }" alt="favorite"/></div><div class="insr-card__footer"><button class="insr-btn" type="button">Sepete Ekle</button></div></article>`;
   }
 
   function renderProducts(products) {
@@ -432,6 +413,13 @@
         ).getPropertyValue("--insr-card-w")
       ) || config.tokens.cardWidth;
     const step = cardW + config.tokens.gap;
+
+    const visibleCards = Math.min(5, products.length);
+    const totalWidth =
+      visibleCards * (cardW + config.tokens.gap) - config.tokens.gap;
+    document.querySelector(
+      ".insr-carousel__scroller"
+    ).style.maxWidth = `${totalWidth}px`;
     const prev = document.querySelector(".insr-nav--prev");
     const next = document.querySelector(".insr-nav--next");
     if (prev && next && scroller) {
@@ -480,20 +468,27 @@
     const mountParent = findInsertPoint();
     const mountAt = buildBaseMarkup();
 
-    const anchor =
-      mountParent.querySelector(".banner__titles") ||
-      mountParent.firstElementChild;
-    if (anchor && anchor.nextSibling) {
-      anchor.parentElement.insertBefore(mountAt, anchor.nextSibling);
+    const section2A = document.querySelector(
+      'cx-page-slot[position="Section2A"]'
+    );
+
+    if (section2A) {
+      section2A.parentElement.insertBefore(mountAt, section2A);
     } else {
-      mountParent.appendChild(mountAt);
+      const anchor =
+        mountParent.querySelector(".banner__titles") ||
+        mountParent.firstElementChild;
+
+      if (anchor && anchor.nextSibling) {
+        anchor.parentElement.insertBefore(mountAt, anchor.nextSibling);
+      } else {
+        mountParent.appendChild(mountAt);
+      }
     }
 
-    document.getElementById("insr-row").innerHTML = `
-        <div style="padding:24px; font:500 14px/1.6 Poppins, system-ui; color:${config.tokens.textColor}">
-          Ürünler yükleniyor...
-        </div>
-      `;
+    document.getElementById(
+      "insr-row"
+    ).innerHTML = `<div style="padding:24px; font:500 14px/1.6 Poppins, system-ui; color:${config.tokens.textColor}">Ürünler yükleniyor...</div>`;
 
     loadProducts().then(renderProducts);
   }
