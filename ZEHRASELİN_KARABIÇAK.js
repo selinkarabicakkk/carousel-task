@@ -4,6 +4,8 @@
       productsKey: "insr_products_cache_v1",
       favoritesKey: "insr_fav_product_ids_v1",
     },
+    dataUrl:
+      "https://gist.githubusercontent.com/sevindi/8bcbde9f02c1d4abe112809c974e1f49/raw/9bf93b58df623a9b16f1db721cd0a7a539296cf0/products.json",
     selectors: {
       afterStoriesAnchors: [
         ".banner .container .banner__titles",
@@ -30,7 +32,7 @@
       cardWidth: 335,
     },
     copy: {
-      title: "Beğenebileceğinizi düşündüklerimiz",
+      title: "Beğenebileceğinizi Düşündüklerimiz",
     },
   };
 
@@ -80,11 +82,9 @@
           line-height: 1.2;
           margin: 0;
         }
-        .insr-carousel__track {
-          position: relative;
-          overflow: hidden;
-          padding: 24px 0;
-        }
+        .insr-carousel__track { position: relative; padding: 24px 0; }
+        .insr-carousel__scroller { overflow-x: auto; overflow-y: hidden; scroll-behavior: smooth; }
+        .insr-carousel__scroller::-webkit-scrollbar { display: none; }
         .insr-carousel__row {
           display: flex;
           gap: ${config.tokens.gap}px;
@@ -161,7 +161,7 @@
   function buildBaseMarkup() {
     const root = document.createElement("section");
     root.className = "insr-carousel";
-    root.setAttribute("aria-label", "Beğenebileceğinizi Düşündüklerimiz");
+    root.setAttribute("aria-label", "Beğenebileceğinizi düşündüklerimiz");
 
     root.innerHTML = `
         <div class="insr-carousel__titlebar">
@@ -169,13 +169,116 @@
         </div>
         <div class="insr-carousel__track">
           <button class="insr-nav insr-nav--prev" aria-label="Geri"></button>
-          <div class="insr-carousel__row" id="insr-row">
-            <!-- Step 2’de ürün kartlarını basacağız -->
+          <div class="insr-carousel__scroller" id="insr-scroll">
+            <div class="insr-carousel__row" id="insr-row">
+              <!-- Step 2’de ürün kartlarını basacağız -->
+            </div>
           </div>
           <button class="insr-nav insr-nav--next" aria-label="İleri"></button>
         </div>
       `;
     return root;
+  }
+
+  function getCachedProducts() {
+    try {
+      const raw = localStorage.getItem(config.localStorage.productsKey);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function setCachedProducts(products) {
+    try {
+      localStorage.setItem(
+        config.localStorage.productsKey,
+        JSON.stringify(products)
+      );
+    } catch (_) {}
+  }
+
+  async function fetchProductsFromRemote() {
+    const res = await fetch(config.dataUrl, { method: "GET" });
+    if (!res.ok) throw new Error("failed to fetch products");
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+  }
+
+  async function loadProducts() {
+    let products = getCachedProducts();
+    if (products && products.length) return products;
+    try {
+      products = await fetchProductsFromRemote();
+      if (products.length) setCachedProducts(products);
+      return products;
+    } catch (err) {
+      console.warn("products fetch error", err);
+      return products || [];
+    }
+  }
+
+  function computeDiscountPercent(price, originalPrice) {
+    if (typeof price !== "number" || typeof originalPrice !== "number")
+      return 0;
+    if (originalPrice <= price) return 0;
+    return Math.round(((originalPrice - price) / originalPrice) * 100);
+  }
+
+  function buildProductCard(product) {
+    const { brand, name, img, url, price, original_price } = product;
+    const hasDiscount =
+      typeof original_price === "number" && original_price > price;
+    const pct = hasDiscount ? computeDiscountPercent(price, original_price) : 0;
+    const oldPriceHtml = hasDiscount
+      ? `<div class="d-flex align-items-center"><span class="insr-price--old">${formatPriceTry(
+          original_price
+        )}</span><span class="insr-price--pct">%${pct}</span></div>`
+      : "";
+    const newPriceCls = hasDiscount
+      ? "insr-price--new discount"
+      : "insr-price--new";
+
+    return `
+      <article class="insr-card">
+        <a href="${url}" target="_blank" rel="noopener" style="text-decoration:none;color:inherit">
+          <figure class="insr-card__imgwrap"><img src="${img}" alt="${
+      (brand || "") + " " + (name || "")
+    }" style="max-width:100%; max-height:100%; object-fit:contain"/></figure>
+          <h2 class="insr-card__brand"><b>${
+            brand || ""
+          } - </b><span class="insr-card__name">${name || ""}</span></h2>
+          <div class="insr-card__price">${oldPriceHtml}<span class="${newPriceCls}">${formatPriceTry(
+      price
+    )}</span></div>
+        </a>
+        <div class="insr-heart"><img src="${
+          config.assets.heart
+        }" alt="favorite"/></div>
+        <div style="padding: 0 5px 10px 5px"><button class="insr-btn" type="button">Sepete Ekle</button></div>
+      </article>
+    `;
+  }
+
+  function renderProducts(products) {
+    const row = document.getElementById("insr-row");
+    if (!row) return;
+    row.innerHTML = products.map(buildProductCard).join("");
+
+    const scroller = document.getElementById("insr-scroll");
+    const step = config.tokens.cardWidth + config.tokens.gap;
+    const prev = document.querySelector(".insr-nav--prev");
+    const next = document.querySelector(".insr-nav--next");
+    if (prev && next && scroller) {
+      prev.addEventListener("click", () =>
+        scroller.scrollBy({ left: -step, behavior: "smooth" })
+      );
+      next.addEventListener("click", () =>
+        scroller.scrollBy({ left: step, behavior: "smooth" })
+      );
+    }
   }
 
   function init() {
@@ -204,6 +307,8 @@
           Ürünler yükleniyor...
         </div>
       `;
+
+    loadProducts().then(renderProducts);
   }
 
   window.__insrCarousel = { config, formatPriceTry, init };
