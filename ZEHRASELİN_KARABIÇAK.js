@@ -39,14 +39,22 @@
   };
 
   function isHomepage() {
+    // Yol kontrolü: Ana sayfa için "/", "/tr", "/tr_TR", "/tr-TR" gibi varyasyonlar
     const path = location.pathname.replace(/\/+$/, "");
-    if (path === "" || path === "/" || /^\/(tr|tr_TR|tr-TR)?$/.test(path))
-      return true;
+    if (path === "" || path === "/" || /^\/(tr|tr_TR|tr-TR)?$/.test(path)) {
+      // Ana sayfa URL'i doğru, şimdi DOM elementlerini kontrol et
+      const storyElements = document.querySelector(
+        '.stories, [class*="stories"], .home-stories, .banner'
+      );
+      const homeElements = document.querySelector(
+        ".homepage, .home, .eb-home, .swiper, .owl-carousel"
+      );
 
-    const hero = document.querySelector(
-      ".homepage, .home, .eb-home, .swiper, .owl-carousel"
-    );
-    return !!hero && !!document.querySelector(".banner");
+      // Ana sayfa URL'i doğru VE gerekli DOM elementleri varsa true döndür
+      return !!storyElements && !!homeElements;
+    }
+
+    return false; // URL ana sayfa değilse kesinlikle false döndür
   }
 
   function findInsertPoint() {
