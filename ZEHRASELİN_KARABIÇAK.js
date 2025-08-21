@@ -38,6 +38,7 @@
     },
   };
 
+  // Ana sayfada değilsek boşuna çalıştırmıyorum
   function isHomepage() {
     const path = location.pathname.replace(/\/+$/, "");
     if (path === "" || path === "/" || /^\/(tr|tr_TR|tr-TR)?$/.test(path)) {
@@ -52,6 +53,7 @@
     return false;
   }
 
+  // Bileşeni stories sonrasına, yoksa en makul parent altına bırak
   function findInsertPoint() {
     const section1 = document.querySelector(
       'cx-page-slot[position="Section1"]'
@@ -78,6 +80,7 @@
     return `${n} TL`;
   }
 
+  // Stil işini tek seferde buradan enjekte ediyorum
   function injectStyles() {
     const css = `
         .insr-carousel { margin-top: 24px; }
@@ -112,7 +115,13 @@
         @media (max-width: 1439px) and (min-width: 1200px) { .insr-carousel { --insr-card-w: 230px; } }
         @media (max-width: 1199px) and (min-width: 992px)  { .insr-carousel { --insr-card-w: 230px; } }
         @media (max-width: 991px) and (min-width: 768px)   { .insr-carousel { --insr-card-w: 230px; } }
-        @media (max-width: 575px) { .insr-carousel { --insr-card-w: 88vw; } }
+        @media (max-width: 767px) and (min-width: 576px)   { .insr-carousel { --insr-card-w: 200px; } }
+        @media (max-width: 575px) { 
+          .insr-carousel { --insr-card-w: calc(100vw - 50px); }
+          .insr-carousel__titlebar { padding: 15px 20px; }
+          .insr-carousel__title { font-size: 20px; }
+          .insr-card { min-height: 420px; }
+        }
 
         .insr-card {
           width: var(--insr-card-w);
@@ -178,6 +187,17 @@
         .insr-price--new.discount { color: ${config.tokens.priceGreen}; }
         .insr-price--old  { font: 400 13.44px Poppins, system-ui; color: ${config.tokens.textColor}; text-decoration: line-through; }
         .insr-price--pct  { font: 400 18px Poppins, system-ui; color: ${config.tokens.priceGreen}; margin-left: 4.8px; }
+        
+        @media (max-width: 576px) {
+          .insr-card__brand { font-size: 11px; }
+          .insr-card__name { font-size: 11px; }
+          .insr-price--new { font-size: 18px; }
+          .insr-price--old { font-size: 12px; }
+          .insr-price--pct { font-size: 14px; }
+          .insr-stars__icons .star { font-size: 14px; }
+          .insr-stars__count { font-size: 11px; }
+          .insr-btn { font-size: 1.2rem; height: 40px; padding: 10px 15px; }
+        }
         .insr-card__price { margin: 8px 0 10px; display: block; }
   
         .insr-heart {
@@ -188,6 +208,16 @@
           cursor: pointer;
           z-index: 3;
           pointer-events: auto;
+        }
+        
+        @media (max-width: 576px) {
+          .insr-heart {
+            width: 36px; height: 36px;
+            top: 5px; right: 5px;
+          }
+          .insr-heart img { 
+            width: 20px; height: 20px; 
+          }
         }
 
         .insr-heart:before {
@@ -226,6 +256,9 @@
         }
         .insr-heart:hover img { opacity: 0; }
         .insr-heart:hover:after { opacity: 1; }
+        
+        .insr-heart.is-favorite img { opacity: 0; }
+        .insr-heart.is-favorite:after { opacity: 1; }
         .insr-card a { position: relative; z-index: 1; display: block; }
   
         .insr-btn {
@@ -238,8 +271,12 @@
           font: 700 1.4rem Poppins, system-ui;
           border: none;
           cursor: pointer;
+          transition: all 0.3s ease;
         }
-        .insr-btn:hover { filter: brightness(0.98); }
+        .insr-btn:hover { 
+          background-color: ${config.tokens.titleColor}; 
+          color: #fff;
+        }
         .insr-card__footer { margin-top: auto; padding: 0 0 22px; }
 
         .insr-card { display: flex; flex-direction: column; }
@@ -261,6 +298,17 @@
           .insr-nav--prev { left: -30px; }
           .insr-nav--next { right: -30px; }
         }
+        @media (max-width: 768px) {
+          .insr-nav { width: 40px; height: 40px; }
+          .insr-nav--prev { left: -20px; background-position: 14px center; }
+          .insr-nav--next { right: -20px; background-position: 14px center; }
+        }
+        @media (max-width: 576px) {
+          .insr-nav { width: 30px; height: 30px; }
+          .insr-nav--prev { left: -15px; background-position: 10px center; background-size: 40%; }
+          .insr-nav--next { right: -15px; background-position: 10px center; background-size: 40%; }
+          .insr-carousel__track { overflow: hidden; padding: 0 10px; }
+        }
   
 
         @media (max-width: 1440px) {
@@ -277,10 +325,11 @@
     document.head.appendChild(styleEl);
   }
 
+  // Başlık ve iskelet yapı
   function buildBaseMarkup() {
     const root = document.createElement("section");
     root.className = "insr-carousel";
-    root.setAttribute("aria-label", "Beğenebileceğinizi Düşündüklerimiz");
+    root.setAttribute("aria-label", config.copy.title);
 
     root.innerHTML = `<div class="insr-carousel__titlebar"><h2 class="insr-carousel__title">${config.copy.title}</h2></div><div class="insr-carousel__track"><button class="insr-nav insr-nav--prev" aria-label="Geri"></button><div class="insr-carousel__scroller" id="insr-scroll"><div class="insr-carousel__row" id="insr-row"></div></div><button class="insr-nav insr-nav--next" aria-label="İleri"></button></div>`;
     return root;
@@ -313,6 +362,7 @@
     return Array.isArray(data) ? data : [];
   }
 
+  // Önce localStorage'a bak, yoksa remote'dan çek
   async function loadProducts() {
     let products = getCachedProducts();
     if (products && products.length) return products;
@@ -388,13 +438,53 @@
     if (!row) return;
     row.innerHTML = products.map(buildProductCard).join("");
 
+    function updateCarouselForScreenSize() {
+      const cardW =
+        parseFloat(
+          getComputedStyle(
+            document.querySelector(".insr-carousel")
+          ).getPropertyValue("--insr-card-w")
+        ) || config.tokens.cardWidth;
+
+      let visibleCards = 5;
+
+      if (window.innerWidth < 1200 && window.innerWidth >= 992) {
+        visibleCards = 4;
+      } else if (window.innerWidth < 992 && window.innerWidth >= 768) {
+        visibleCards = 3;
+      } else if (window.innerWidth < 768 && window.innerWidth >= 576) {
+        visibleCards = 2;
+      } else if (window.innerWidth < 576) {
+        visibleCards = 1;
+      }
+
+      visibleCards = Math.min(visibleCards, products.length);
+      const totalWidth =
+        visibleCards * (cardW + config.tokens.gap) - config.tokens.gap;
+
+      if (window.innerWidth < 768) {
+        document.querySelector(".insr-carousel__scroller").style.maxWidth =
+          "none";
+        document.querySelector(".insr-carousel__scroller").style.overflowX =
+          "auto";
+      } else {
+        document.querySelector(
+          ".insr-carousel__scroller"
+        ).style.maxWidth = `${totalWidth}px`;
+      }
+    }
+
+    window.addEventListener("resize", updateCarouselForScreenSize);
+
     const favIds = loadFavorites();
     document.querySelectorAll(".insr-card").forEach((card) => {
       const pid = card.getAttribute("data-id");
       const heart = card.querySelector(".insr-heart");
       const heartImg = heart.querySelector("img");
-      if (favIds.includes(String(pid)))
+      if (favIds.includes(String(pid))) {
         heartImg.src = config.assets.heartActive;
+        heart.classList.add("is-favorite");
+      }
 
       heart.addEventListener("click", (ev) => {
         ev.preventDefault();
@@ -402,6 +492,12 @@
         toggleFavorite(String(pid));
         const nowFav = loadFavorites().includes(String(pid));
         heartImg.src = nowFav ? config.assets.heartActive : config.assets.heart;
+
+        if (nowFav) {
+          heart.classList.add("is-favorite");
+        } else {
+          heart.classList.remove("is-favorite");
+        }
       });
     });
 
@@ -414,12 +510,34 @@
       ) || config.tokens.cardWidth;
     const step = cardW + config.tokens.gap;
 
-    const visibleCards = Math.min(5, products.length);
+    let visibleCards = 5;
+
+    if (window.innerWidth < 1200 && window.innerWidth >= 992) {
+      visibleCards = 4;
+    } else if (window.innerWidth < 992 && window.innerWidth >= 768) {
+      visibleCards = 3;
+    } else if (window.innerWidth < 768 && window.innerWidth >= 576) {
+      visibleCards = 2;
+    } else if (window.innerWidth < 576) {
+      visibleCards = 1;
+    }
+
+    visibleCards = Math.min(visibleCards, products.length);
     const totalWidth =
       visibleCards * (cardW + config.tokens.gap) - config.tokens.gap;
-    document.querySelector(
-      ".insr-carousel__scroller"
-    ).style.maxWidth = `${totalWidth}px`;
+
+    const carousel = document.querySelector(".insr-carousel");
+
+    if (window.innerWidth < 768) {
+      document.querySelector(".insr-carousel__scroller").style.maxWidth =
+        "none";
+      document.querySelector(".insr-carousel__scroller").style.overflowX =
+        "auto";
+    } else {
+      document.querySelector(
+        ".insr-carousel__scroller"
+      ).style.maxWidth = `${totalWidth}px`;
+    }
     const prev = document.querySelector(".insr-nav--prev");
     const next = document.querySelector(".insr-nav--next");
     if (prev && next && scroller) {
@@ -449,6 +567,7 @@
       );
     } catch (_) {}
   }
+  // Kalbe basınca favori listesine ekle/çıkar
   function toggleFavorite(id) {
     const set = new Set(loadFavorites());
     if (set.has(id)) set.delete(id);
@@ -456,6 +575,7 @@
     saveFavorites(Array.from(set));
   }
 
+  // Başlangıç noktası
   function init() {
     if (!isHomepage()) {
       console.log("wrong page");
@@ -493,6 +613,5 @@
     loadProducts().then(renderProducts);
   }
 
-  window.__insrCarousel = { config, formatPriceTry, init };
   init();
 })();
